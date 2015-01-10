@@ -1,0 +1,6 @@
+sala : 5057
+coll: sex
+gimenez : cluster
+5057 : Cabanes : sala
+123456 : Lleida : valles
+jesus : Vilafant : picornell
