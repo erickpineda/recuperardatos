@@ -29,20 +29,22 @@ public class App {
 	 * Fichero de texto, que tendrá los usuarios y contraseñas.
 	 */
 	private static String nombreFichero = "/datos.txt";
+	/**
+	 * URL para la conexión.
+	 */
 	private static String pathURL = "http://projectes.iescendrassos.net/entrada/checklogin.php";
 	/**
 	 * Entrada del fichero que se leerá.
 	 */
 	private static InputStream ficheroALeer = null;
 	/**
-	 * Leerá la secuencia del fichero de texto.
+	 * Leerá la secuencia del fichero de texto @param nombreFichero.
 	 */
 	private static BufferedReader inFile = null;
 	/**
 	 * Leerá la secuencia de la URL.
 	 */
 	private static BufferedReader inURL = null;
-
 	/**
 	 * Usuario del login.
 	 */
@@ -61,14 +63,13 @@ public class App {
 
 	/**
 	 * Método que lee el fichero de texto. Línea a línea va identificando
-	 * usuario y contraseña del login.
+	 * usuario y contraseña para después iniciar sesión.
 	 */
 	public static void leerFichero() {
 
 		try {
 
-			// Línea en fichero
-			String linea;
+			String linea; // Línea en fichero
 			ficheroALeer = App.class.getResourceAsStream(nombreFichero);
 			inFile = new BufferedReader(new InputStreamReader(ficheroALeer));
 
@@ -88,11 +89,12 @@ public class App {
 						user = array[2].trim();
 						pass = array[0].trim();
 						break;
+
 					default:
 						break;
 					}
 
-					System.out.println(" -> Usuario: " + user + " Contraseña: "
+					System.out.println(" -> Usuario: " + user + " -> Contraseña: "
 							+ pass);
 
 					recuperarDatos(user, pass);
@@ -125,8 +127,8 @@ public class App {
 	}
 
 	/**
-	 * Método que pasa por parámetro dos String, crea una conexión vía URL para
-	 * rellenar los datos del login.
+	 * Método que pasa por parámetro dos String <i>( usuario y contraseña )</i>,
+	 * crea una conexión vía URL para rellenar los datos del login.
 	 * 
 	 * @param myUser
 	 *            Parámetro que será el nombre del usuario.
@@ -197,35 +199,52 @@ public class App {
 		}
 	}
 
+	/**
+	 * Método que pasa por parámetro el String de la línea leída en la URL,
+	 * separará la ubicación de la imágen y el nombre de la misma.
+	 * 
+	 * @param lineaLeida
+	 *            String que será la línea en la URL.
+	 */
 	public static void lecturaDeImagen(String lineaLeida) {
-		// '(.*?)'
-		String[] urlImg = lineaLeida.split("'", 0);
+
+		String[] urlImg = lineaLeida.split("'", 0); // '(.*?)'
 		String[] imagen = urlImg[1].split("/");
 
+		descargarImagen(urlImg[1], imagen[1]);
+	}
+
+	/**
+	 * Una vez leída la imágen, éste método pasa por parámetro dos String que
+	 * serán: la ubicación de la imágen y nombre de ésta misma. Abre una
+	 * conexión URL hacia el link absoluto y procederá a descargar la imágen.
+	 * 
+	 * @param pathImg
+	 *            Ubicación de la imágen.
+	 * @param nameImg
+	 *            Nombre de la imágen.
+	 */
+	public static void descargarImagen(String pathImg, String nameImg) {
+
 		try {
-			descargarImagen(urlImg[1], imagen[1]);
+
+			// Link absoluto de la imágen
+			// Ej: http://projectes.iescendrassos.net/entrada/pilaf-net.png
+			URL url = new URL(pathURL.replace("checklogin.php", "") + pathImg);
+
+			InputStream in = new BufferedInputStream(url.openStream());
+			OutputStream out = new BufferedOutputStream(new FileOutputStream(
+					"src/main/resources/" + nameImg));
+
+			// Lee cada byte de la imágen hasta el final de la misma
+			for (byte i = 0; (i = (byte) in.read()) != -1;) {
+				out.write(i);
+			}
+
+			in.close();
+			out.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
-		System.out.println(" 0: " + urlImg[0] + " 1: " + urlImg[1] + " 2: "
-				+ urlImg[2]);
-	}
-
-	public static void descargarImagen(String pathImg, String nameImg)
-			throws IOException {
-
-		URL url = new URL(pathURL.replace("checklogin.php", "") + pathImg);
-
-		InputStream in = new BufferedInputStream(url.openStream());
-		OutputStream out = new BufferedOutputStream(new FileOutputStream(
-				"src/main/resources/" + nameImg));
-
-		for (int i = 0; (i = in.read()) != -1;) {
-			out.write(i);
-		}
-
-		in.close();
-		out.close();
 	}
 }
