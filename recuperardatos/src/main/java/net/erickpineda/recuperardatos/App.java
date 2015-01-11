@@ -1,10 +1,14 @@
 package net.erickpineda.recuperardatos;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.CookieHandler;
@@ -25,6 +29,7 @@ public class App {
 	 * Fichero de texto, que tendrá los usuarios y contraseñas.
 	 */
 	private static String nombreFichero = "/datos.txt";
+	private static String pathURL = "http://projectes.iescendrassos.net/entrada/checklogin.php";
 	/**
 	 * Entrada del fichero que se leerá.
 	 */
@@ -37,6 +42,7 @@ public class App {
 	 * Leerá la secuencia de la URL.
 	 */
 	private static BufferedReader inURL = null;
+
 	/**
 	 * Usuario del login.
 	 */
@@ -74,30 +80,40 @@ public class App {
 
 					switch (array.length) {
 					case 2:
-						user = array[0].replace(" ", "");
-						pass = array[1].replace(" ", "");
+						user = array[0].trim();
+						pass = array[1].trim();
 						break;
 
 					case 3:
-						user = array[2].replace(" ", "");
-						pass = array[0].replace(" ", "");
+						user = array[2].trim();
+						pass = array[0].trim();
 						break;
 					default:
 						break;
 					}
-					System.out.println(user + " " + pass);
+
+					System.out.println(" -> Usuario: " + user + " Contraseña: "
+							+ pass);
+
 					recuperarDatos(user, pass);
 					linea = inFile.readLine();
 				}
 			}
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
+
 		} catch (MalformedURLException e) {
+			System.out.println(" -> La url: " + pathURL + " ¡no es válida!");
 			e.printStackTrace();
+
 		} catch (FileNotFoundException e) {
+			System.out.println(" -> El fichero: " + nombreFichero
+					+ " ¡no existe!");
 			e.printStackTrace();
+
 		} catch (IOException e) {
 			e.printStackTrace();
+
 		} finally {
 			if (ficheroALeer != null)
 				try {
@@ -129,14 +145,15 @@ public class App {
 		// Datos del Formulario
 		String data = URLEncoder.encode("usuari", "UTF-8") + "="
 				+ URLEncoder.encode(myUser, "UTF-8");
+
 		data += "&" + URLEncoder.encode("contrasenya", "UTF-8") + "="
 				+ URLEncoder.encode(myPass, "UTF-8");
+
 		data += "&" + URLEncoder.encode("Entrar", "UTF-8") + "="
 				+ URLEncoder.encode("Entrar", "UTF-8");
 
 		// Login a conectar
-		URL url = new URL(
-				"http://projectes.iescendrassos.net/entrada/checklogin.php");
+		URL url = new URL(pathURL);
 
 		// Establecer la conexión
 		URLConnection conexion = url.openConnection();
@@ -171,9 +188,44 @@ public class App {
 			linea = inURL.readLine();
 
 			while (linea != null) {
-				System.out.println(linea);
+
+				if (linea.contains("<img src="))
+					lecturaDeImagen(linea);
+
 				linea = inURL.readLine();
 			}
 		}
+	}
+
+	public static void lecturaDeImagen(String lineaLeida) {
+		// '(.*?)'
+		String[] urlImg = lineaLeida.split("'", 0);
+		String[] imagen = urlImg[1].split("/");
+
+		try {
+			descargarImagen(urlImg[1], imagen[1]);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		System.out.println(" 0: " + urlImg[0] + " 1: " + urlImg[1] + " 2: "
+				+ urlImg[2]);
+	}
+
+	public static void descargarImagen(String pathImg, String nameImg)
+			throws IOException {
+
+		URL url = new URL(pathURL.replace("checklogin.php", "") + pathImg);
+
+		InputStream in = new BufferedInputStream(url.openStream());
+		OutputStream out = new BufferedOutputStream(new FileOutputStream(
+				"src/main/resources/" + nameImg));
+
+		for (int i = 0; (i = in.read()) != -1;) {
+			out.write(i);
+		}
+
+		in.close();
+		out.close();
 	}
 }
